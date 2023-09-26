@@ -11,8 +11,9 @@ services:
       - ./vector.toml:/etc/vector/vector.toml:ro
     environment:
       - VECTOR_OPENSSL_LEGACY_PROVIDER=false
-      - VECTOR_WATCH_CONFIG=true
+      - VECTOR_WATCH_CONFIG=truel
     command: --allocation-tracing
+    
   elastic:
     container_name: es
     image: elasticsearch:7.17.13
