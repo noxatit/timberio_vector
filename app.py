@@ -109,14 +109,14 @@ def int_to_byte(b):
         return f'{b:.2f} B'
 
 components = {}
-received_events_start = 0
-received_events_timestamp_start = None
-received_bytes_start = 0
-received_bytes_timestamp_start = None
-sent_events_start = 0
-sent_events_timestamp_start = None
-sent_bytes_start = 0
-sent_bytes_timestamp_start = None
+# received_events_start = 0
+# received_events_timestamp_start = None
+# received_bytes_start = 0
+# received_bytes_timestamp_start = None
+# sent_events_start = 0
+# sent_events_timestamp_start = None
+# sent_bytes_start = 0
+# sent_bytes_timestamp_start = None
 
 def allocate_callback(input):
     if input['data']['componentAllocatedBytes'] is not None:
@@ -135,24 +135,28 @@ def allocate_callback(input):
     if resp['data'] is not None:
         if resp['data']['sources'] and resp['data']['sources']['edges']:
             for x in resp['data']['sources']['edges']:
-                received_events = int(x['node']['metrics']['receivedEventsTotal']['receivedEventsTotal'])
-                received_events_timestamp = datetime.fromisoformat(x['node']['metrics']['receivedEventsTotal']['timestamp'][:-9])
-                received_bytes = int(x['node']['metrics']['receivedBytesTotal']['receivedBytesTotal'])
-                received_bytes_timestamp = datetime.fromisoformat(x['node']['metrics']['receivedBytesTotal']['timestamp'][:-9])
-                print(f'[AVG] ReceivedEvents:'.ljust(32), f'{received_events} ({(received_events - received_events_start) / (received_events_timestamp - received_events_timestamp_start).total_seconds():.2f} events/s)')
-                print(f'[AVG] ReceivedBytes:'.ljust(32), f'{int_to_byte(received_bytes)} ({int_to_byte((received_bytes - received_bytes_start) / (received_bytes_timestamp - received_bytes_timestamp_start).total_seconds())}/s)')
+                component_id = x['node']['componentId']
+                components[component_id]['received_events'] = int(x['node']['metrics']['receivedEventsTotal']['receivedEventsTotal'])
+                components[component_id]['received_events_timestamp'] = datetime.fromisoformat(x['node']['metrics']['receivedEventsTotal']['timestamp'][:-9])
+                components[component_id]['received_bytes'] = int(x['node']['metrics']['receivedBytesTotal']['receivedBytesTotal'])
+                components[component_id]['received_bytes_timestamp'] = datetime.fromisoformat(x['node']['metrics']['receivedBytesTotal']['timestamp'][:-9])
+                c = components[component_id]
+                print(f'[AVG] {component_id}'.ljust(32), f'ReceivedEvents:'.ljust(16), f'{c["received_events"]} ({(c["received_events"] - c["received_events_start"]) / (c["received_events_timestamp"] - c["received_events_timestamp_start"]).total_seconds():.2f} events/s)')
+                print(f'[AVG] {component_id}'.ljust(32), f'ReceivedBytes:'.ljust(16), f'{int_to_byte(c["received_bytes"])} ({int_to_byte((c["received_bytes"] - c["received_bytes_start"]) / (c["received_bytes_timestamp"] - c["received_bytes_timestamp_start"]).total_seconds())}/s)')
         # if resp['data']['transforms']:
         #     for x in resp['data']['transforms']['edges']:
         #         print('trans -> compenent_id= ', x['node']['componentId'])
         #         print('trans -> sent_events_total= ', x['node']['metrics']['sentEventsTotal']['sentEventsTotal'])
         if resp['data']['sinks']:
             for x in resp['data']['sinks']['edges']:
-                sent_bytes = int(x['node']['metrics']['sentBytesTotal']['sentBytesTotal'])
-                sent_bytes_timestamp = datetime.fromisoformat(x['node']['metrics']['sentBytesTotal']['timestamp'][:-9])
-                sent_events = int(x['node']['metrics']['sentEventsTotal']['sentEventsTotal'])
-                sent_events_timestamp = datetime.fromisoformat(x['node']['metrics']['sentEventsTotal']['timestamp'][:-9])
-                print(f'[AVG] SentEvents:'.ljust(32), f'{sent_events} ({(sent_events - sent_events_start) / (sent_events_timestamp - sent_events_timestamp_start).total_seconds():.2f} events/s)')
-                print(f'[AVG] SentBytes:'.ljust(32), f'{int_to_byte(sent_bytes)} ({int_to_byte((sent_bytes - sent_bytes_start) / (sent_bytes_timestamp - sent_bytes_timestamp_start).total_seconds())}/s)')
+                component_id = x['node']['componentId']
+                components[component_id]['sent_bytes'] = int(x['node']['metrics']['sentBytesTotal']['sentBytesTotal'])
+                components[component_id]['sent_bytes_timestamp'] = datetime.fromisoformat(x['node']['metrics']['sentBytesTotal']['timestamp'][:-9])
+                components[component_id]['sent_events'] = int(x['node']['metrics']['sentEventsTotal']['sentEventsTotal'])
+                components[component_id]['sent_events_timestamp'] = datetime.fromisoformat(x['node']['metrics']['sentEventsTotal']['timestamp'][:-9])
+                c = components[component_id]
+                print(f'[AVG] {component_id}'.ljust(32), f'SentEvents:'.ljust(16), f'{c["sent_events"]} ({(c["sent_events"] - c["sent_events_start"]) / (c["sent_events_timestamp"] - c["sent_events_timestamp_start"]).total_seconds():.2f} events/s)')
+                print(f'[AVG] {component_id}'.ljust(32), f'SentBytes:'.ljust(16), f'{int_to_byte(c["sent_bytes"])} ({int_to_byte((c["sent_bytes"] - c["sent_bytes_start"]) / (c["sent_bytes_timestamp"] - c["sent_bytes_timestamp_start"]).total_seconds())}/s)')
 
 async def subscribe_and_listen(client, end_time):
     while end_time >= datetime.now():
@@ -184,20 +188,20 @@ if __name__ == '__main__':
         if resp['data']['sources'] and resp['data']['sources']['edges']:
             for x in resp['data']['sources']['edges']:
                 print('sources      -> compenent_id= ', x['node']['componentId'])
-                received_events_start = int(x['node']['metrics']['receivedEventsTotal']['receivedEventsTotal'])
-                received_events_timestamp_start = datetime.fromisoformat(x['node']['metrics']['receivedEventsTotal']['timestamp'][:-9])
-                received_bytes_start = int(x['node']['metrics']['receivedBytesTotal']['receivedBytesTotal'])
-                received_bytes_timestamp_start = datetime.fromisoformat(x['node']['metrics']['receivedBytesTotal']['timestamp'][:-9])
+                components[x['node']['componentId']]['received_events_start'] = int(x['node']['metrics']['receivedEventsTotal']['receivedEventsTotal'])
+                components[x['node']['componentId']]['received_events_timestamp_start'] = datetime.fromisoformat(x['node']['metrics']['receivedEventsTotal']['timestamp'][:-9])
+                components[x['node']['componentId']]['received_bytes_start'] = int(x['node']['metrics']['receivedBytesTotal']['receivedBytesTotal'])
+                components[x['node']['componentId']]['received_bytes_timestamp_start'] = datetime.fromisoformat(x['node']['metrics']['receivedBytesTotal']['timestamp'][:-9])
         if resp['data']['transforms']:
             for x in resp['data']['transforms']['edges']:
                 print('transforms   -> compenent_id= ', x['node']['componentId'])
         if resp['data']['sinks']:
             for x in resp['data']['sinks']['edges']:
                 print('sinks        -> compenent_id= ', x['node']['componentId'])
-                sent_bytes_start = int(x['node']['metrics']['sentBytesTotal']['sentBytesTotal'])
-                sent_bytes_timestamp_start = datetime.fromisoformat(x['node']['metrics']['sentBytesTotal']['timestamp'][:-9])
-                sent_events_start = int(x['node']['metrics']['sentEventsTotal']['sentEventsTotal'])
-                sent_events_timestamp_start = datetime.fromisoformat(x['node']['metrics']['sentEventsTotal']['timestamp'][:-9])
+                components[x['node']['componentId']]['sent_bytes_start'] = int(x['node']['metrics']['sentBytesTotal']['sentBytesTotal'])
+                components[x['node']['componentId']]['sent_bytes_timestamp_start'] = datetime.fromisoformat(x['node']['metrics']['sentBytesTotal']['timestamp'][:-9])
+                components[x['node']['componentId']]['sent_events_start'] = int(x['node']['metrics']['sentEventsTotal']['sentEventsTotal'])
+                components[x['node']['componentId']]['sent_events_timestamp_start'] = datetime.fromisoformat(x['node']['metrics']['sentEventsTotal']['timestamp'][:-9])
 
     client = GraphqlClient(endpoint=f'ws://{args.s}:{args.p}{args.u}')
     asyncio.run(subscribe_and_listen(client, end_time))
